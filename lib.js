@@ -1,3 +1,8 @@
+// lib.js is where the actions invoked by the CLI live.
+// It appears a little monolithic, but it's nice to have the methods in one place as long as there aren't too many.
+// The methods are seperated into two sections, actions and helpers.
+// Most actions will need user input, received by using inquirer with the appropriate 'questions'
+
 const path = require('path');
 const inq = require('inquirer');
 const chalk = require('chalk');
@@ -11,11 +16,9 @@ const db = require('lowdb')(path.join(__dirname, 'db.json'));
 db.defaults({directories: [], profilePath: ""})
     .write();
 
-
-// Returns true if an element with this path is already stored, false if it doesn't
-function exists(path) {
-    return !!db.get('directories').find({path}).value()
-}
+//
+// Action Methods
+//
 
 // Prints out all saved directories, filtering by tag if a tag was given
 function list(filter) {
@@ -76,7 +79,20 @@ function select(filter) {
     });
 }
 
-// Adds tag(s) to selected directories
+// Used to drop the db. Confirms with user first.
+function reset() {
+    inq.prompt(questions.reset()).then(ans => {
+        if(ans.confirm) {
+            db.setState({});
+        }
+    });
+}
+
+//
+// Semi-Action Methods
+//
+
+// (Only called by select()) Adds tag(s) to selected directories
 function addTags(selected) {
     inq.prompt(questions.addTags()).then(ans => {
         const {tags, confirm} = ans;
@@ -89,7 +105,7 @@ function addTags(selected) {
     });
 }
 
-// Remove selected directories from the db
+// (Only called by select()) Remove selected directories from the db
 function remove(selected) {
     inq.prompt(questions.remove(selected.length)).then(ans => {
         if(!ans.confirm) return false;
@@ -99,7 +115,7 @@ function remove(selected) {
     })
 }
 
-// Fetches data for given directory, then asks user what they'd like to change, writing the results
+// (Only called by select()) Fetches data for given directory, then asks user what they'd like to change, writing the results
 function edit(path) {
     const f = db.get('directories').find({path}).value();
     const defaults = {name: f.name, desc: f.desc, tags: f.tags.join(', ')}
@@ -111,6 +127,28 @@ function edit(path) {
             .assign({name, desc, tags: serializeTags(tags)})
             .write()
     });
+}
+
+//
+// Helper Methods
+//
+
+// Returns true if an element with this path is already stored, false if it doesn't
+function exists(path) {
+    return !!db.get('directories').find({path}).value()
+}
+
+// Returns a list of saved directories, filtered by any filter given. If the resulting list is empty, return false
+function getFilteredDirs({tag}) {
+    let dirs;
+    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
+    else dirs = db.get('directories').value();
+    if (dirs.length < 1) {
+        if (tag) tagAlert();
+        else emptyAlert();
+        return false;
+    }
+    else return dirs
 }
 
 // Receives a string "node, react, template" and returns an array ["node","react","template"]
@@ -127,19 +165,6 @@ function deserializeTags(tags) {
         : tags.map(t => '['+t+']').join('');
 }
 
-// Returns a list of saved directories, filtered by any filter given. If the resulting list is empty, return false
-function getFilteredDirs({tag}) {
-    let dirs;
-    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
-    else dirs = db.get('directories').value();
-    if (dirs.length < 1) {
-        if (tag) tagAlert();
-        else emptyAlert();
-        return false;
-    }
-    else return dirs
-}
-
 // Alerts user that there are no directories saved
 function emptyAlert() {
     return console.log(chalk.yellow('There is nothing saved in dirbook!'));
@@ -148,15 +173,6 @@ function emptyAlert() {
 // Alerts user that there are no directories with the tag they are filtering with
 function tagAlert() {
     return console.log(chalk.yellow('There is nothing saved in dirbook with that tag!'));
-}
-
-// Used to drop the db. Confirms with user first.
-function reset() {
-    inq.prompt(questions.reset()).then(ans => {
-        if(ans.confirm) {
-            db.setState({});
-        }
-    });
 }
 
 module.exports = {

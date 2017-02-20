@@ -1,13 +1,15 @@
 #!/usr/bin/env node
+
+// index.js is the root script of dirbook. It uses commander to configure a CLI with commands available to the user
+// Commander also generates the help section of the program, accessed with 'dirbook -h --help'
+
 const program = require('commander');
-const fs = require('fs');
 const chalk = require('chalk');
 const lib = require('./lib');
 
 // If no commands are given, default to the list command
 if(process.argv.length < 3) lib.list({})
 
-// Uses commander to configure the "program", which encapsulates all of the command logic, and populates the help command
 program
 	.version('0.0.1')
 program.command('open')
