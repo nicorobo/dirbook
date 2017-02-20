@@ -13,7 +13,7 @@ const exec = require('child_process').exec;
 const db = require('lowdb')(path.join(__dirname, 'db.json'));
 
 // Sets db's defaults if empty
-db.defaults({directories: [], profilePath: ""})
+db.defaults({directories: []})
     .write();
 
 //
