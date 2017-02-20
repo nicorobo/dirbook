@@ -93,8 +93,17 @@ function reset() {
 }
 
 function bpSettings({active, path}) {
-    if (active) db.get('bp').assign({active: (active === 'true')}).write();
-    if (path) db.get('bp').assign({path}).write();
+    if (active) {
+        db.get('bp').assign({active: (active === 'true')}).write();
+        if(active === "true") updateBP();
+        else clearBP();
+    }
+    if (path) {
+        const curPath = db.get('bp').get('path').value()
+        if(curPath) clearBP();
+        db.get('bp').assign({path}).write();
+        updateBP();
+    }
     printBPSettings();
 }
 
@@ -149,7 +158,13 @@ function updateBP() {
     const {active, path} = db.get('bp').value();
     if(!active) return false;
     if (!path) return console.log('No bash profile path set')
-    bp.update(db.get('directories').value(), path)
+    bp.update(path, db.get('directories').value())
+}
+
+function clearBP() {
+    const {active, path} = db.get('bp').value();
+    if (!path) return console.log('No bash profile path set')
+    bp.update(path)
 }
 
 // Returns true if an element with this path is already stored, false if it doesn't
