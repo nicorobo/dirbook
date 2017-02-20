@@ -4,8 +4,10 @@ const fs = require('fs');
 const chalk = require('chalk');
 const lib = require('./lib');
 
+// If no commands are given, default to the list command
 if(process.argv.length < 3) lib.list({})
 
+// Uses commander to configure the "program", which encapsulates all of the command logic, and populates the help command
 program
 	.version('0.0.1')
 program.command('open')
