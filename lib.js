@@ -3,6 +3,8 @@ const inq = require('inquirer');
 const chalk = require('chalk');
 const questions = require('./questions');
 const exec = require('child_process').exec;
+
+// Creates the db object using db.json found in the modules directory
 const db = require('lowdb')(path.join(__dirname, 'db.json'));
 
 // Sets db's defaults if empty
@@ -16,14 +18,9 @@ function exists(path) {
 }
 
 // Prints out all saved directories, filtering by tag if a tag was given
-function list({tag}) {
-    let dirs;
-    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
-    else dirs = db.get('directories').value();
-    if (dirs.length < 1) {
-        tagAlert()
-        return false;
-    }
+function list(filter) {
+    const dirs = getFilteredDirs(filter);
+    if(!dirs) return false;
     dirs.forEach(d => console.log(`${chalk.cyan(d.name)} ${chalk.dim(d.desc)} ${chalk.magenta(deserializeTags(d.tags))}`))
 }
 
@@ -45,16 +42,11 @@ function add() {
 }
 
 // Shows a list of saved directories, allowing user to select one and copy its contents,
-// along with a new name, to the current directory.
-function copy({tag}) {
+// along with a new name, to the current directory
+function copy(filter) {
     const pathname = process.cwd();
-    let dirs;
-    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
-    else dirs = db.get('directories').value();
-    if (dirs.length < 1) {
-        tagAlert()
-        return false;
-    }
+    const dirs = getFilteredDirs(filter);
+    if(!dirs) return false;
     inq.prompt(questions.copy(dirs))
         .then(ans => {
             const {path, name, confirm} = ans;
@@ -63,27 +55,20 @@ function copy({tag}) {
         });
 }
 
-function open({tag}) {
-    let dirs;
-    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
-    else dirs = db.get('directories').value();
-    if (dirs.length < 1) {
-        tagAlert()
-        return false;
-    }
+// Opens the chosen directory in Finder (probably something else in Windows/Linux)
+function open(filter) {
+    const dirs = getFilteredDirs(filter);
+    if(!dirs) return false;
     inq.prompt(questions.open(dirs)).then(ans => {
         exec(`cd ${ans.path} && open .`);
     });
 }
 
-function select({tag}) {
-    let dirs;
-    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
-    else dirs = db.get('directories').value();
-    if (dirs.length < 1) {
-        tagAlert()
-        return false;
-    }
+// Displays list of directories, allowing user to select one or many, and then choose an action to perform
+// If only one directory is chosen, edit is an option. remove and add-tags are options regardless
+function select(filter) {
+    const dirs = getFilteredDirs(filter);
+    if(!dirs) return false;
     inq.prompt(questions.select(dirs)).then(ans => {
         let {selected, action} = ans;
         if(selected.length <= 0) return false;
@@ -93,6 +78,7 @@ function select({tag}) {
     });
 }
 
+// Adds tag(s) to selected directories
 function addTags(selected) {
     inq.prompt(questions.addTags()).then(ans => {
         const {tags, confirm} = ans;
@@ -105,6 +91,7 @@ function addTags(selected) {
     });
 }
 
+// Remove selected directories from the db
 function remove(selected) {
     inq.prompt(questions.remove(selected.length)).then(ans => {
         if(!ans.confirm) return false;
@@ -141,6 +128,19 @@ function deserializeTags(tags) {
     return tags.length < 1
         ? ''
         : tags.map(t => '['+t+']').join('');
+}
+
+// Returns a list of saved directories, filtered by any filter given. If the resulting list is empty, return false
+function getFilteredDirs({tag}) {
+    let dirs;
+    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
+    else dirs = db.get('directories').value();
+    if (dirs.length < 1) {
+        if (tag) tagAlert();
+        else emptyAlert();
+        return false;
+    }
+    else return dirs
 }
 
 // Alerts user that there are no directories saved
