@@ -1,3 +1,7 @@
+// questions.js is where the inquirer user queries live. 
+// Each represents a flow of questions for the user to answer to accomplish a task.
+// These are all exported for use with inquirer in lib.js
+
 const chalk = require('chalk');
 
 module.exports = {
