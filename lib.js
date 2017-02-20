@@ -8,12 +8,12 @@ const inq = require('inquirer');
 const chalk = require('chalk');
 const questions = require('./questions');
 const exec = require('child_process').exec;
-const bp = require('./bpEdit');
+const am = require('./aliasManager');
 
 // Creates the db object using db.json found in the modules directory
 const db = require('lowdb')(path.join(__dirname, 'db.json'));
 
-const defaults = {directories: [], bp: {active: false, path: ''}}
+const defaults = {directories: [], alias: {active: false, path: ''}}
 // Sets db's defaults if empty
 db.defaults(defaults)
     .write();
@@ -42,7 +42,7 @@ function add() {
         db.get('directories')
             .push({path: pathname, name, desc, tags: serializeTags(tags)})
             .write()
-        updateBP()
+        updateAliases()
     });
 }
 
@@ -87,24 +87,24 @@ function reset() {
     inq.prompt(questions.reset()).then(ans => {
         if(ans.confirm) {
             db.setState(defaults);
-            updateBP();
+            updateAliases();
         }
     });
 }
 
-function bpSettings({active, path}) {
+function aliasSettings({active, path}) {
     if (active) {
-        db.get('bp').assign({active: (active === 'true')}).write();
-        if(active === "true") updateBP();
-        else clearBP();
+        db.get('alias').assign({active: (active === 'true')}).write();
+        if(active === "true") updateAliases();
+        else clearAliases();
     }
     if (path) {
-        const curPath = db.get('bp').get('path').value()
-        if(curPath) clearBP();
-        db.get('bp').assign({path}).write();
-        updateBP();
+        const curPath = db.get('alias').get('path').value()
+        if(curPath) clearAliases();
+        db.get('alias').assign({path}).write();
+        updateAliases();
     }
-    printBPSettings();
+    printAliasSettings();
 }
 
 //
@@ -131,7 +131,7 @@ function remove(selected) {
         db.get('directories')
             .remove(i => selected.includes(i.path))
             .write()
-        updateBP()
+        updateAliases()
     })
 }
 
@@ -146,7 +146,7 @@ function edit(path) {
             .find({path})
             .assign({name, desc, tags: serializeTags(tags)})
             .write()
-        updateBP()
+        updateAliases()
     });
 }
 
@@ -154,17 +154,17 @@ function edit(path) {
 // Helper Methods
 //
 
-function updateBP() {
-    const {active, path} = db.get('bp').value();
+function updateAliases() {
+    const {active, path} = db.get('alias').value();
     if(!active) return false;
     if (!path) return console.log('No bash profile path set')
-    bp.update(path, db.get('directories').value())
+    am.update(path, db.get('directories').value())
 }
 
-function clearBP() {
-    const {active, path} = db.get('bp').value();
+function clearAliases() {
+    const {active, path} = db.get('alias').value();
     if (!path) return console.log('No bash profile path set')
-    bp.update(path)
+    am.update(path)
 }
 
 // Returns true if an element with this path is already stored, false if it doesn't
@@ -209,9 +209,9 @@ function tagAlert() {
     return console.log(chalk.yellow('There is nothing saved in dirbook with that tag!'));
 }
 
-function printBPSettings() {
-    const { active, path } = db.get('bp').value();
-    return console.log(chalk.yellow(`bp active: ${active}\nbp path: ${path}`));
+function printAliasSettings() {
+    const { active, path } = db.get('alias').value();
+    return console.log(chalk.yellow(`Aliases active: ${active}\nAlias path: ${path}`));
 }
 
 module.exports = {
@@ -220,6 +220,6 @@ module.exports = {
     copy,
     open,
     select,
-    bpSettings,
+    aliasSettings,
     reset
 }
