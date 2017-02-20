@@ -13,7 +13,7 @@ const am = require('./aliasManager');
 // Creates the db object using db.json found in the modules directory
 const db = require('lowdb')(path.join(__dirname, 'db.json'));
 
-const defaults = {directories: [], alias: {active: false, path: ''}}
+const defaults = {directories: [], alias: {active: false, path: '', prefix: 'dirbook-'}}
 // Sets db's defaults if empty
 db.defaults(defaults)
     .write();
@@ -92,21 +92,11 @@ function reset() {
     });
 }
 
-function aliasSettings({on, off, path}) {
-    if (on) {
-        db.get('alias').assign({active: true}).write();
-        updateAliases();
-    }
-    if (off) {
-        db.get('alias').assign({active: false}).write();
-        clearAliases();
-    }
-    if (path) {
-        const curPath = db.get('alias').get('path').value()
-        if(curPath !== path) clearAliases();
-        db.get('alias').assign({path}).write();
-        updateAliases();
-    }
+function aliasSettings({active, off, prefix, path}) {
+    if (active) handleAliasOn();
+    if (off) handleAliasOff();
+    if (prefix) handleAliasPrefix(prefix);
+    if (path) handleAliasPath(path);
     printAliasSettings();
 }
 
@@ -153,15 +143,38 @@ function edit(path) {
     });
 }
 
+function handleAliasOn() {
+    db.get('alias').assign({active: true}).write();
+    updateAliases();
+}
+
+function handleAliasOff() {
+    db.get('alias').assign({active: false}).write();
+    clearAliases();
+}
+
+function handleAliasPrefix(prefix) {
+    db.get('alias').assign({prefix}).write();
+    updateAliases();
+}
+
+// If aliases were saved somewhere else previously, remove them before updating the path.
+function handleAliasPath(path) {
+    const curPath = db.get('alias').get('path').value()
+    if(curPath !== path) clearAliases();
+    db.get('alias').assign({path}).write();
+    updateAliases();
+}
+
 //
 // Helper Methods
 //
 
 function updateAliases() {
-    const {active, path} = db.get('alias').value();
+    const {active, prefix, path} = db.get('alias').value();
     if(!active) return false;
     if (!path) return console.log('No bash profile path set')
-    am.update(path, db.get('directories').value())
+    am.update(path, db.get('directories').value(), prefix)
 }
 
 function clearAliases() {
@@ -213,8 +226,8 @@ function tagAlert() {
 }
 
 function printAliasSettings() {
-    const { active, path } = db.get('alias').value();
-    return console.log(chalk.yellow(`Alias status: ${active ? 'on' : 'off'}\nAlias path: ${path}`));
+    const { active, prefix, path } = db.get('alias').value();
+    return console.log(chalk.yellow(`Alias status: ${active ? 'on' : 'off'}\nAlias path: ${path}\nAlias prefix: ${prefix}`));
 }
 
 module.exports = {

@@ -8,7 +8,6 @@
 const fs = require('fs');
 const start = '# dirbook-aliases-start\n'
 const end = '# dirbook-aliases-end\n'
-const prefix = 'dirbook-';
 
 // Finds the start / end of the saved aliases. If there is a start, we assume theres an end (dangerous?)
 // deleting all of the text inbetween (inclusive)
@@ -23,7 +22,7 @@ function reset (data) {
 }
 
 // Here we concatenate the aliases together, and then smack it onto the beginning of the file and return. 
-function add (data, dirs) {
+function add (data, dirs, prefix) {
 	let s = start
 	dirs.forEach( i => s += `\talias ${prefix+i.name}=\'cd ${i.path}\'\n`)
 	s += end
@@ -33,11 +32,11 @@ function add (data, dirs) {
 // This is where the file is read/written to. 
 // If there are no dirs, only call reset.
 // Otherwise, call reset then add.
-function update(path, dirs) {
+function update(path, dirs, prefix) {
 	fs.readFile(path, 'utf-8', (err, data) => {
 		if(err) return console.error(err);
 		data = reset(data);
-		if(dirs) data = add(data, dirs);
+		if(dirs) data = add(data, dirs, prefix);
 		fs.writeFile(path, data, (err) => {
 			if(err) return console.error(err);
 		})
