@@ -1,4 +1,5 @@
 const fs = require('fs');
+const exec = require('child_process').exec;
 const start = '# dirbook-aliases-start\n'
 const end = '# dirbook-aliases-end\n'
 const prefix = 'dirbook-';
@@ -25,7 +26,7 @@ function update(path, dirs) {
 		if(dirs) data = add(data, dirs);
 		fs.writeFile(path, data, (err) => {
 			if(err) return console.error(err);
-			console.log('Bash Profile Updated');
+			exec(`source ${path}`);
 		})
 	})
 }
