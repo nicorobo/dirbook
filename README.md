@@ -1,5 +1,5 @@
 # dirbook
-Dirbook is a small CLI I created to help index directories/projects.
+Dirbook is a small CLI created to help index directories/projects.
 
 ## Adding a directory
 To add a directory to the index, visit it in your terminal and run `dirbook add`.

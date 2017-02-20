@@ -88,6 +88,10 @@ function reset() {
     });
 }
 
+function bpSettings() {
+    console.log('bpSettings')
+}
+
 //
 // Semi-Action Methods
 //
@@ -181,5 +185,6 @@ module.exports = {
     copy,
     open,
     select,
+    bpSettings,
     reset
 }
