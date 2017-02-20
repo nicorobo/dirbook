@@ -31,14 +31,13 @@ function add() {
     
     if (exists(pathname)) return console.log(`${chalk.magenta.dim(dirname)} has already been added!`);
 
-    inq.prompt(questions.add({name: dirname}))
-        .then(ans => {
-            const {name, desc, confirm, tags} = ans;
-            if (!confirm) return false;
-            db.get('directories')
-                .push({path: pathname, name, desc, tags: serializeTags(tags)})
-                .write()
-        });
+    inq.prompt(questions.add({name: dirname})).then(ans => {
+        const {name, desc, confirm, tags} = ans;
+        if (!confirm) return false;
+        db.get('directories')
+            .push({path: pathname, name, desc, tags: serializeTags(tags)})
+            .write()
+    });
 }
 
 // Shows a list of saved directories, allowing user to select one and copy its contents,
@@ -47,12 +46,11 @@ function copy(filter) {
     const pathname = process.cwd();
     const dirs = getFilteredDirs(filter);
     if(!dirs) return false;
-    inq.prompt(questions.copy(dirs))
-        .then(ans => {
-            const {path, name, confirm} = ans;
-            if (!confirm) return false;
-            exec(`cp -r ${path} ${pathname}/${name}`);
-        });
+    inq.prompt(questions.copy(dirs)).then(ans => {
+        const {path, name, confirm} = ans;
+        if (!confirm) return false;
+        exec(`cp -r ${path} ${pathname}/${name}`);
+    });
 }
 
 // Opens the chosen directory in Finder (probably something else in Windows/Linux)
@@ -105,15 +103,14 @@ function remove(selected) {
 function edit(path) {
     const f = db.get('directories').find({path}).value();
     const defaults = {name: f.name, desc: f.desc, tags: f.tags.join(', ')}
-    inq.prompt(questions.add(defaults))
-        .then(ans => {
-            const {name, desc, confirm, tags} = ans;
-            if (!confirm) return false;
-            db.get('directories')
-                .find({path})
-                .assign({name, desc, tags: serializeTags(tags)})
-                .write()
-        });
+    inq.prompt(questions.add(defaults))=.then(ans => {
+        const {name, desc, confirm, tags} = ans;
+        if (!confirm) return false;
+        db.get('directories')
+            .find({path})
+            .assign({name, desc, tags: serializeTags(tags)})
+            .write()
+    });
 }
 
 // Receives a string "node, react, template" and returns an array ["node","react","template"]
