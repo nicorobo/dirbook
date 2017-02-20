@@ -92,15 +92,18 @@ function reset() {
     });
 }
 
-function aliasSettings({active, path}) {
-    if (active) {
-        db.get('alias').assign({active: (active === 'true')}).write();
-        if(active === "true") updateAliases();
-        else clearAliases();
+function aliasSettings({on, off, path}) {
+    if (on) {
+        db.get('alias').assign({active: true}).write();
+        updateAliases();
+    }
+    if (off) {
+        db.get('alias').assign({active: false}).write();
+        clearAliases();
     }
     if (path) {
         const curPath = db.get('alias').get('path').value()
-        if(curPath) clearAliases();
+        if(curPath !== path) clearAliases();
         db.get('alias').assign({path}).write();
         updateAliases();
     }
@@ -211,7 +214,7 @@ function tagAlert() {
 
 function printAliasSettings() {
     const { active, path } = db.get('alias').value();
-    return console.log(chalk.yellow(`Aliases active: ${active}\nAlias path: ${path}`));
+    return console.log(chalk.yellow(`Alias status: ${active ? 'on' : 'off'}\nAlias path: ${path}`));
 }
 
 module.exports = {
