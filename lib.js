@@ -119,7 +119,7 @@ function remove(selected) {
 function edit(path) {
     const f = db.get('directories').find({path}).value();
     const defaults = {name: f.name, desc: f.desc, tags: f.tags.join(', ')}
-    inq.prompt(questions.add(defaults))=.then(ans => {
+    inq.prompt(questions.add(defaults)).then(ans => {
         const {name, desc, confirm, tags} = ans;
         if (!confirm) return false;
         db.get('directories')
