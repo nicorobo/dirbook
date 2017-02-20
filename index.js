@@ -2,9 +2,7 @@
 const program = require('commander');
 const fs = require('fs');
 const chalk = require('chalk');
-const StorageManager = require('./StorageManager');
-
-const sm = new StorageManager(`${__dirname}/directories.json`)
+const sm = require('./StorageManager');
 
 if(process.argv.length < 3) sm.list({})
 

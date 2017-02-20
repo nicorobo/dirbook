@@ -1,156 +1,172 @@
-const fs = require('fs');
 const path = require('path');
 const inq = require('inquirer');
 const chalk = require('chalk');
 const questions = require('./questions');
 const exec = require('child_process').exec;
+const db = require('lowdb')(path.join(__dirname, 'db.json'));
 
-module.exports = class StorageManager {
-    constructor(path) {
-        this.path = path;
-        this.data = this.getData();
-        this.add = this.add.bind(this);
-        this.copy = this.copy.bind(this);
-        this.open = this.open.bind(this);
-        this.select = this.select.bind(this);
-        this.list = this.list.bind(this);
-        this.reset = this.reset.bind(this);
+// Sets db's defaults if empty
+db.defaults({directories: [], profilePath: ""})
+    .write();
+
+
+// Returns true if an element with this path is already stored, false if it doesn't
+function exists(path) {
+    return !!db.get('directories').find({path}).value()
+}
+
+// Prints out all saved directories, filtering by tag if a tag was given
+function list({tag}) {
+    let dirs;
+    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
+    else dirs = db.get('directories').value();
+    if (dirs.length < 1) {
+        tagAlert()
+        return false;
     }
+    dirs.forEach(d => console.log(`${chalk.cyan(d.name)} ${chalk.dim(d.desc)} ${chalk.magenta(deserializeTags(d.tags))}`))
+}
 
-    getData() {
-        try { return require(this.path) || [] } 
-        catch (e) { return [] }
-    }
+// Adds directory with given path to the db, querying user for any details
+function add() {
+    const pathname = process.cwd();
+    const dirname = path.basename(pathname);
+    
+    if (exists(pathname)) return console.log(`${chalk.magenta.dim(dirname)} has already been added!`);
 
-    exists(path) {
-        return this.data.some(dir => dir.path === path)
-    }
-
-    get(path) {
-        return this.data.filter(d => d.path === path)[0];
-    }
-
-    list({tag}) {
-        let {data} = this;
-        if(data.length <= 0) return this.emptyAlert();
-        if (tag) {
-            data = data.filter(d => d.tags.includes(tag))
-            if (data.length <= 0) return this.tagAlert();
-        }
-        data.forEach(d => console.log(`${chalk.cyan(d.name)} ${chalk.dim(d.desc)} ${chalk.magenta(d.tags.map(t => '['+t+']').join(''))}`))
-    }
-
-    add() {
-        const pathname = process.cwd();
-        const dirname = path.basename(pathname);
-        
-        if (this.exists(pathname)) return console.log(`${chalk.magenta.dim(dirname)} has already been added!`);
-
-        inq.prompt(questions.add({name: dirname})).then(ans => {
+    inq.prompt(questions.add({name: dirname}))
+        .then(ans => {
             const {name, desc, confirm, tags} = ans;
             if (!confirm) return false;
-            const tagsArray = tags.split(',').map(t => t.trim());
-            this.data = [].concat(this.data, [{path: pathname, name, desc, tags: tagsArray}]);
-            this.writeData();
+            db.get('directories')
+                .push({path: pathname, name, desc, tags: serializeTags(tags)})
+                .write()
         });
-    }
+}
 
-    copy({tag}) {
-        let {data} = this;
-        const pathname = process.cwd();
-        if (data.length <= 0) return this.emptyAlert();
-        if (tag) {
-            data = data.filter(d => d.tags.includes(tag))
-            if (data.length <= 0) return this.tagAlert();
-        }
-        inq.prompt(questions.copy(data)).then(ans => {
+// Shows a list of saved directories, allowing user to select one and copy its contents,
+// along with a new name, to the current directory.
+function copy({tag}) {
+    const pathname = process.cwd();
+    let dirs;
+    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
+    else dirs = db.get('directories').value();
+    if (dirs.length < 1) {
+        tagAlert()
+        return false;
+    }
+    inq.prompt(questions.copy(dirs))
+        .then(ans => {
             const {path, name, confirm} = ans;
             if (!confirm) return false;
-            exec(`cp -r ${path} ${pathname+'/'+name}`);
+            exec(`cp -r ${path} ${pathname}/${name}`);
         });
+}
+
+function open({tag}) {
+    let dirs;
+    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
+    else dirs = db.get('directories').value();
+    if (dirs.length < 1) {
+        tagAlert()
+        return false;
     }
+    inq.prompt(questions.open(dirs)).then(ans => {
+        exec(`cd ${ans.path} && open .`);
+    });
+}
 
-   open({tag}) {
-        let {data} = this;
-        if (data.length <= 0) return this.emptyAlert();
-        if (tag) {
-            data = data.filter(d => d.tags.includes(tag))
-            if (data.length <= 0) return this.tagAlert();
-        }
-        inq.prompt(questions.open(data)).then(ans => {
-            const {path} = ans;
-            exec(`cd ${path} && open .`);
-        });
+function select({tag}) {
+    let dirs;
+    if (tag) dirs = db.get('directories').filter(i => i.tags.includes(tag)).value();
+    else dirs = db.get('directories').value();
+    if (dirs.length < 1) {
+        tagAlert()
+        return false;
     }
+    inq.prompt(questions.select(dirs)).then(ans => {
+        let {selected, action} = ans;
+        if(selected.length <= 0) return false;
+        if(action === 'edit') edit(selected[0]);
+        else if(action === 'remove') remove(selected);
+        else if(action === 'add-tags') addTags(selected);
+    });
+}
 
-    select({tag}) {
-        let {data} = this;
-        if(data.length <= 0) return this.emptyAlert();
-        if (tag) {
-            data = data.filter(d => d.tags.includes(tag))
-            if (data.length <= 0) return this.tagAlert();
-        }
-        inq.prompt(questions.select(data)).then(ans => {
-            let {selected, action} = ans;
-            if(selected.length <= 0) return false;
-            if(selected.length === 1) selected = selected[0];
+function addTags(selected) {
+    inq.prompt(questions.addTags()).then(ans => {
+        const {tags, confirm} = ans;
+        if (!confirm) return false;
+        const tagsArray = serializeTags(tags);
+        db.get('directories')
+            .filter(i => selected.includes(i.path))
+            .each(i => Object.assign(i, {tags: i.tags.concat(tagsArray)}))
+            .write()
+    });
+}
 
-            if(action === 'edit') this.edit(selected);
-            if(action === 'remove') this.remove(selected);
-            if(action === 'add-tags') this.addTags(selected);
-        });
-    }
+function remove(selected) {
+    inq.prompt(questions.remove(selected.length)).then(ans => {
+        if(!ans.confirm) return false;
+        db.get('directories')
+            .remove(i => selected.includes(i.path))
+            .write()
+    })
+}
 
-    addTags(selected) {
-        inq.prompt(questions.addTags()).then(ans => {
-            const {tags, confirm} = ans;
-            if (!confirm) return false;
-            const tagsArray = tags.split(',').map(t => t.trim());
-            this.data = this.data.map(d => selected.includes(d.path) ? Object.assign({}, d, {tags: d.tags.concat(tagsArray)}) : d);
-            this.writeData();
-        });
-    }
-
-    remove(selected) {
-        inq.prompt(questions.remove(Array.isArray(selected) ? selected.length : 1)).then(ans => {
-            if(!ans.confirm) return false;
-            this.data = this.data.filter(d => selected.indexOf(d.path) < 0)
-            this.writeData();
-        })
-    }
-
-    edit(path) {
-        const file = this.get(path);
-        const defaults = {name: file.name, desc: file.desc, tags: file.tags.join(', ')}
-        inq.prompt(questions.add(defaults)).then(ans => {
+// Fetches data for given directory, then asks user what they'd like to change, writing the results
+function edit(path) {
+    const f = db.get('directories').find({path}).value();
+    const defaults = {name: f.name, desc: f.desc, tags: f.tags.join(', ')}
+    inq.prompt(questions.add(defaults))
+        .then(ans => {
             const {name, desc, confirm, tags} = ans;
             if (!confirm) return false;
-            const tagsArray = tags.split(',').map(t => t.trim());
-            this.data = this.data.map(d => d.path !== file.path ? d : {path: d.path, name, desc, tags:tagsArray});
-            this.writeData();
+            db.get('directories')
+                .find({path})
+                .assign({name, desc, tags: serializeTags(tags)})
+                .write()
         });
-    }
+}
 
-    emptyAlert() {
-        return console.log(chalk.yellow('There is nothing saved in dirbook!'));
-    }
+// Receives a string "node, react, template" and returns an array ["node","react","template"]
+function serializeTags(tags) {
+    return tags.trim() === "" 
+        ? []
+        : tags.split(',').map(t => t.trim());
+}
 
-    tagAlert() {
-        return console.log(chalk.yellow('There is nothing saved in dirbook with that tag!'));
-    }
+// Receives an array ["node","react","template"] and returns a string "[node][react][template]"
+function deserializeTags(tags) {
+    return tags.length < 1
+        ? ''
+        : tags.map(t => '['+t+']').join('');
+}
 
-    reset() {
-        inq.prompt(questions.reset()).then(ans => {
-            if(ans.confirm) {
-                this.data = [];
-                this.writeData();
-            }
-        });
-    }
+// Alerts user that there are no directories saved
+function emptyAlert() {
+    return console.log(chalk.yellow('There is nothing saved in dirbook!'));
+}
 
-    writeData() {
-        const {path, data} = this;
-        fs.writeFile(path, JSON.stringify(data), err => err ? console.err(err) : true)
-    }
+// Alerts user that there are no directories with the tag they are filtering with
+function tagAlert() {
+    return console.log(chalk.yellow('There is nothing saved in dirbook with that tag!'));
+}
 
- }
+// Used to drop the db. Confirms with user first.
+function reset() {
+    inq.prompt(questions.reset()).then(ans => {
+        if(ans.confirm) {
+            db.setState({});
+        }
+    });
+}
+
+module.exports = {
+    list,
+    add,
+    copy,
+    open,
+    select,
+    reset
+}
