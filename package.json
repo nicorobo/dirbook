@@ -1,0 +1,20 @@
+{
+  "name": "dirbook",
+  "version": "1.0.0",
+  "description": "A neat little npm tool.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Nick Roberts",
+  "preferGlobal": true,
+  "bin": {
+    "dirbook": "index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^1.1.3",
+    "commander": "^2.9.0",
+    "inquirer": "^1.2.2"
+  }
+}
