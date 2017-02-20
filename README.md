@@ -1,6 +1,12 @@
 # dirbook
 Dirbook is a small CLI created to help index directories/projects.
 
+* Index directories, giving them names, short descriptions, and tags
+* Copy an indexed directory to the current directory, giving it a new name (great for small starter-projects)
+* Open an indexed directory in Finder/File Explorer
+* Use tags to organize and filter directories
+* Turn on aliasing to have dirbook manage a small subsection of your .bash\_profile or .bash\_rc, keeping aliases to cd into directories.
+
 ## Adding a directory
 To add a directory to the index, visit it in your terminal and run `dirbook add`.
 *dirbook* will ask you a few questions (name, description, tags), and then index the directory.
@@ -23,11 +29,12 @@ making them easy to copy anywhere I am in the terminal.
 
 	  Commands:
 
-	    open [options]     Opens the selected directory.
+	    open [options]     Open the selected directory in Finder/File Explorer.
 	    add                Add current directory to dirbook.
 	    copy [options]     Allows you to select directory to copy.
 	    select [options]   Allows you to select directories and perform actions.
 	    ls [options]       List all the things.
+	    alias [options]    Configure alias settings
 	    reset              Wipes dirbook's memory.
 
 	  Options:
