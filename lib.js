@@ -8,12 +8,14 @@ const inq = require('inquirer');
 const chalk = require('chalk');
 const questions = require('./questions');
 const exec = require('child_process').exec;
+const bp = require('./bpEdit');
 
 // Creates the db object using db.json found in the modules directory
 const db = require('lowdb')(path.join(__dirname, 'db.json'));
 
+const defaults = {directories: [], bp: {active: false, path: ''}}
 // Sets db's defaults if empty
-db.defaults({directories: []})
+db.defaults(defaults)
     .write();
 
 //
@@ -40,6 +42,7 @@ function add() {
         db.get('directories')
             .push({path: pathname, name, desc, tags: serializeTags(tags)})
             .write()
+        updateBP()
     });
 }
 
@@ -83,13 +86,16 @@ function select(filter) {
 function reset() {
     inq.prompt(questions.reset()).then(ans => {
         if(ans.confirm) {
-            db.setState({});
+            db.setState(defaults);
+            updateBP();
         }
     });
 }
 
-function bpSettings() {
-    console.log('bpSettings')
+function bpSettings({active, path}) {
+    if (active) db.get('bp').assign({active: (active === 'true')}).write();
+    if (path) db.get('bp').assign({path}).write();
+    printBPSettings();
 }
 
 //
@@ -116,6 +122,7 @@ function remove(selected) {
         db.get('directories')
             .remove(i => selected.includes(i.path))
             .write()
+        updateBP()
     })
 }
 
@@ -130,12 +137,20 @@ function edit(path) {
             .find({path})
             .assign({name, desc, tags: serializeTags(tags)})
             .write()
+        updateBP()
     });
 }
 
 //
 // Helper Methods
 //
+
+function updateBP() {
+    const {active, path} = db.get('bp').value();
+    if(!active) return false;
+    if (!path) return console.log('No bash profile path set')
+    bp.update(db.get('directories').value(), path)
+}
 
 // Returns true if an element with this path is already stored, false if it doesn't
 function exists(path) {
@@ -177,6 +192,11 @@ function emptyAlert() {
 // Alerts user that there are no directories with the tag they are filtering with
 function tagAlert() {
     return console.log(chalk.yellow('There is nothing saved in dirbook with that tag!'));
+}
+
+function printBPSettings() {
+    const { active, path } = db.get('bp').value();
+    return console.log(chalk.yellow(`bp active: ${active}\nbp path: ${path}`));
 }
 
 module.exports = {
