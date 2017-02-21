@@ -1,11 +1,11 @@
 {
   "name": "dirbook",
   "version": "1.0.0",
-  "description": "A neat little npm tool.",
+  "description": "Dirbook is a small CLI created to help index directories/projects. ",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["organization", "directories"],
   "author": "Nick Roberts",
   "preferGlobal": true,
   "bin": {

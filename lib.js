@@ -86,8 +86,8 @@ function select(filter) {
 function reset() {
     inq.prompt(questions.reset()).then(ans => {
         if(ans.confirm) {
+            clearAliases();
             db.setState(defaults);
-            updateAliases();
         }
     });
 }
