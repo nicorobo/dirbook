@@ -1,6 +1,6 @@
 # dirbook
 Dirbook is a small CLI created to help index directories/projects.
-
+![printed dirbook index](https://dl.dropboxusercontent.com/s/0790x9ita2c8w0p/Screenshot%202017-02-21%2010.34.02.png?dl=0)
 * Index directories, giving them names, short descriptions, and tags
 * Copy an indexed directory to the current directory, giving it a new name (great for small starter-projects)
 * Open an indexed directory in Finder/File Explorer
@@ -9,6 +9,7 @@ Dirbook is a small CLI created to help index directories/projects.
 
 ### `add`
 `dirbook add` will index the current working directory, after asking you a few questions (name, description, tags).
+![dirbook add user flow](https://dl.dropboxusercontent.com/s/gp7hjqycrkjpibs/Screenshot%202017-02-21%2010.30.17.png?dl=0)
 
 ### `copy [-t --tag <tag>]`
 `dirbook copy` displays a list of all indexed directories. After selecting one and giving your new directory a name, a copy will be made in your current working directory.
@@ -33,6 +34,12 @@ Aliases will be given a prefix of `dirbook-` by default to avoid overriding othe
 
 Turning aliasing **on** will add an alias for ever indexed directory, using the form `alias <prefix><name> = 'cd <path>'`
 Turning aliasing off will remove all aliases from *<path>*
+
+	\# dirbook-aliases-start
+		alias dirbook-element-calc='cd /Users/nickroberts404/Development/Projects/element-calc'
+		alias dirbook-thoughtjar='cd /Users/nickroberts404/Development/Projects/thoughtjar'
+		alias dirbook-telegraph='cd /Users/nickroberts404/Development/Projects/Telegraph'
+	\# dirbook-aliases-end
 
 *(Aliases will only be available after restarting the terminal, or after calling `source <path>`.)*
 
