@@ -1,6 +1,5 @@
 # dirbook
 Dirbook is a small CLI created to help index directories/projects.
-Install: 
 
 	npm install -g dirbook
 ![printed dirbook index](https://dl.dropboxusercontent.com/s/0790x9ita2c8w0p/Screenshot%202017-02-21%2010.34.02.png?dl=0)

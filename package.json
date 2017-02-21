@@ -16,5 +16,14 @@
     "chalk": "^1.1.3",
     "commander": "^2.9.0",
     "inquirer": "^1.2.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nickroberts404/dirbook.git"
+  },
+
+  "bugs": {
+    "url": "https://github.com/nickroberts404/dirbook/issues"
+  },
+  "homepage": "https://github.com/nickroberts404/dirbook#readme"
 }
