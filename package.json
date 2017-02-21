@@ -5,7 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["organization", "directories"],
+  "keywords": [
+    "organization",
+    "directories"
+  ],
   "author": "Nick Roberts",
   "preferGlobal": true,
   "bin": {
@@ -15,13 +18,13 @@
   "dependencies": {
     "chalk": "^1.1.3",
     "commander": "^2.9.0",
-    "inquirer": "^1.2.2"
+    "inquirer": "^1.2.2",
+    "lowdb": "^0.15.5"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nickroberts404/dirbook.git"
   },
-
   "bugs": {
     "url": "https://github.com/nickroberts404/dirbook/issues"
   },
